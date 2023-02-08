@@ -16,6 +16,7 @@ class PostForm(forms.ModelForm):
             'group': 'не обязательное поле'
         }
 
+
 class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment

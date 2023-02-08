@@ -45,6 +45,7 @@ class Post(models.Model):
     def __str__(self):
         return self.text[:settings.LIMIT_CHAR_STR]
 
+
 class Comment(models.Model):
     post = models.ForeignKey(
         Post,
