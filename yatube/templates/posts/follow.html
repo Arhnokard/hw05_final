@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}
+  Посты избранных авторов
+{% endblock %}  
+{% block content %}
+  {% include "includes/swither.html" %}
+  {% load thumbnail %}
+  {% load cache %}
+  {% cache 20 index_page page_obj %}
+    <div class="container py-5">
+      {% for post in page_obj %}
+        {% include 'includes/post_list.html' %}
+        {% if post.group %} 
+          <a href="{% url 'posts:group_posts' post.group.slug %}">все записи группы</a>
+        {% endif %}
+        {% if not forloop.last %}<hr>{% endif %}
+      {% endfor %}
+      {% include 'includes/paginator.html' %}
+    </div>
+  {% endcache %}   
+{% endblock %}
