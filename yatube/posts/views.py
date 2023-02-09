@@ -38,8 +38,11 @@ def profile(request, username):
     template = 'posts/profile.html'
     profile = get_object_or_404(User, username=username)
     profile_posts = profile.posts.all()
-    following = Follow.objects.filter(author=profile,
-                                      user=request.user).exists()
+    if request.user.is_authenticated:
+        following = Follow.objects.filter(author=profile,
+                                          user=request.user).exists()
+    else:
+        following = False
     context = {
         'page_obj': paginator(request, profile_posts),
         'author': profile,
