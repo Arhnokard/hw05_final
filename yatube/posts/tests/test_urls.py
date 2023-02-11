@@ -14,8 +14,16 @@ class PostsURLTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.INDEX_URL = '/'
+        cls.GROUP_URL = '/group/test-slug/'
+        cls.PROFILE_URL = '/profile/Rin/'
+        cls.DETAIL_POST_URL = '/posts/1/'
+        cls.EDIT_URL = '/posts/1/edit/'
         cls.CREATE_URL = '/create/'
         cls.LOGIN_URL = '/auth/login/'
+        cls.ADD_COMMENT_URL = f'/posts/1/comment/'
+        cls.FOLLOW_INDEX_URL = '/follow/'
+        cls.PROFILE_FOLLOW_URL = f'/profile/Rin/follow/'
+        cls.PROFILE_UNFOLLOW_URL = f'/profile/Rin/unfollow/'
         cls.UNEXISTING = '/unexisting/'
         cls.user = User.objects.create_user(username='Rin')
         cls.user2 = User.objects.create_user(username='Varian')
@@ -30,11 +38,6 @@ class PostsURLTests(TestCase):
         )
 
     def setUp(self):
-        self.GROUP_URL = f'/group/{self.group.slug}/'
-        self.PROFILE_URL = f'/profile/{self.user}/'
-        self.DETAIL_POST_URL = f'/posts/{self.post.pk}/'
-        self.EDIT_URL = f'/posts/{self.post.pk}/edit/'
-        self.ADD_COMMENT_URL = f'/posts/{self.post.pk}/comment/'
         self.guest_client = Client()
         self.author_client = Client()
         self.author_client.force_login(self.user)
@@ -44,18 +47,12 @@ class PostsURLTests(TestCase):
     def test_url_autorized_client(self):
         addres_list = [
             self.INDEX_URL, self.GROUP_URL, self.PROFILE_URL,
-            self.DETAIL_POST_URL, self.CREATE_URL
+            self.DETAIL_POST_URL, self.CREATE_URL, self.FOLLOW_INDEX_URL
         ]
         for addres in addres_list:
             with self.subTest(addres == addres):
                 response = self.autorized_client.get(addres)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
-
-    def test_post_edit_url_guest_client(self):
-        response = self.guest_client.get(self.EDIT_URL)
-        self.assertRedirects(
-            response, (f'{self.LOGIN_URL}?next={self.EDIT_URL}')
-        )
 
     def test_post_edit_url_autorized_client(self):
         response = self.autorized_client.get(self.EDIT_URL)
@@ -64,12 +61,18 @@ class PostsURLTests(TestCase):
     def test_post_edit_url_author_client(self):
         response = self.author_client.get(self.EDIT_URL)
         self.assertEqual(response.status_code, HTTPStatus.OK)
-
-    def test_post_create_url_guest_client(self):
-        response = self.guest_client.get(self.CREATE_URL, follow=True)
-        self.assertRedirects(
-            response, (f'{self.LOGIN_URL}?next={self.CREATE_URL}'))
-
+        
+    def test_redirect_url_quest_client(self):
+        url_list = (
+            self.CREATE_URL, self.EDIT_URL, self.ADD_COMMENT_URL,
+            self.FOLLOW_INDEX_URL, self.PROFILE_FOLLOW_URL,
+            self.PROFILE_UNFOLLOW_URL
+        )
+        for url in url_list:
+            response = self.guest_client.get(url, follow=True)
+            self.assertRedirects(
+                response, (f'{self.LOGIN_URL}?next={url}'))
+        
     def test_unexisting_url_guest_client(self):
         response = self.guest_client.get(self.UNEXISTING)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
@@ -82,27 +85,10 @@ class PostsURLTests(TestCase):
             self.DETAIL_POST_URL: 'posts/post_detail.html',
             self.CREATE_URL: 'posts/create_post.html',
             self.EDIT_URL: 'posts/create_post.html',
+            self.FOLLOW_INDEX_URL: 'posts/follow.html',
             self.UNEXISTING: 'core/404.html'
         }
         for address, template in templates_url_names.items():
             with self.subTest(address=address):
                 response = self.author_client.get(address)
                 self.assertTemplateUsed(response, template)
-
-    def test_add_comment_quest_client(self):
-        comment = {
-            'text': 'комментарий'
-        }
-        response = self.guest_client.post(self.ADD_COMMENT_URL,
-                                          data=comment, follow=True)
-        self.assertRedirects(
-            response, (f'{self.LOGIN_URL}?next={self.ADD_COMMENT_URL}')
-        )
-
-    def test_add_comment_author_client(self):
-        comment = {
-            'text': 'комментарий'
-        }
-        response = self.author_client.post(self.ADD_COMMENT_URL,
-                                           data=comment, follow=True)
-        self.assertEqual(response.status_code, HTTPStatus.OK)

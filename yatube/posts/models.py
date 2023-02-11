@@ -58,7 +58,7 @@ class Comment(models.Model):
         related_name='comments'
     )
     text = models.TextField('Текст комментария', help_text='Введите текст')
-    created = models.DateTimeField('Дата комента', auto_now_add=True)
+    created = models.DateTimeField('Дата коментария', auto_now_add=True)
 
     def __str__(self):
         return self.text[:settings.LIMIT_CHAR_STR]
@@ -76,3 +76,5 @@ class Follow(models.Model):
         on_delete=models.CASCADE,
         related_name='following'
     )
+    class Meta:
+        models.UniqueConstraint(fields=['user', 'author'], name='unique_author')

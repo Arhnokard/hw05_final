@@ -32,6 +32,13 @@ class PostsViewsTest(TestCase):
         cls.INDEX_URL = '/'
         cls.CREATE_URL = '/create/'
         cls.FOLLOW_INDEX_URL = '/follow/'
+        cls.GROUP_URL = f'/group/test-slug/'
+        cls.PROFILE_URL = f'/profile/Rin/'
+        cls.DETAIL_POST_URL = f'/posts/1/'
+        cls.EDIT_URL = f'/posts/1/edit/'
+        cls.ADD_COMMENT_URL = f'/posts/1/comment/'
+        cls.PROFILE_FOLLOW_URL = f'/profile/Rin/follow/'
+        cls.PROFILE_UNFOLLOW_URL = f'/profile/Nikolay/unfollow/'
         cls.small_gif = (
             b'\x47\x49\x46\x38\x39\x61\x02\x00'
             b'\x01\x00\x80\x00\x00\x00\x00\x00'
@@ -63,6 +70,10 @@ class PostsViewsTest(TestCase):
             group=cls.group,
             image=cls.uploaded
         )
+        cls.follow = Follow.objects.create(
+            user=cls.user,
+            author=cls.user2
+        )
 
     @classmethod
     def tearDownClass(cls):
@@ -71,13 +82,6 @@ class PostsViewsTest(TestCase):
 
     def setUp(self):
         cache.clear()
-        self.GROUP_URL = f'/group/{self.group.slug}/'
-        self.PROFILE_URL = f'/profile/{self.user}/'
-        self.DETAIL_POST_URL = f'/posts/{self.post.pk}/'
-        self.EDIT_URL = f'/posts/{self.post.pk}/edit/'
-        self.ADD_COMMENT_URL = f'/posts/{self.post.pk}/comment/'
-        self.PROFILE_FOLLOW_URL = f'/profile/{self.user.username}/follow/'
-        self.PROFILE_UNFOLLOW_URL = f'/profile/{self.user.username}/unfollow/'
         self.rin_client = Client()
         self.rin_client.force_login(self.user)
         self.nikolay_client = Client()
@@ -103,7 +107,7 @@ class PostsViewsTest(TestCase):
         self.assertEqual(page_obj.group.slug, self.group.slug)
         self.assertEqual(page_obj.group.description, self.group.description)
         self.assertEqual(page_obj.author, self.post.author)
-        self.assertEqual(page_obj.image.name, self.post.image)
+        self.assertEqual(page_obj.image, self.post.image)
 
     def helper_form_context(self, response):
         self.assertIn('form', response.context)
@@ -159,25 +163,35 @@ class PostsViewsTest(TestCase):
             response.context['comments'][0].text, comment['text']
         )
 
-    def test_profile_follow_unfollow(self):
-        start_follower = Follow.objects.count()
-        get_request(self.nikolay_client, self.PROFILE_FOLLOW_URL)
-        self.assertNotEqual(start_follower, Follow.objects.count())
-        get_request(self.nikolay_client, self.PROFILE_UNFOLLOW_URL)
-        self.assertEqual(start_follower, Follow.objects.count())
+    def test_profile_follow(self):
+        follow_count = Follow.objects.count()
+        self.nikolay_client.get(self.PROFILE_FOLLOW_URL)
+        self.assertEqual(Follow.objects.count(), follow_count + 1)
 
-    def test_follow_index(self):
-        response = get_request(self.nikolay_client, self.FOLLOW_INDEX_URL)
-        count_follow_posts = len(response.context['page_obj'])
-        cache.clear()
-        get_request(self.nikolay_client, self.PROFILE_FOLLOW_URL)
-        response = get_request(self.nikolay_client, self.FOLLOW_INDEX_URL)
-        self.assertNotEqual(count_follow_posts,
-                            len(response.context['page_obj']))
-        cache.clear()
-        response = get_request(self.rin_client, self.FOLLOW_INDEX_URL)
-        self.assertEqual(count_follow_posts,
-                         len(response.context['page_obj']))
+    def test_profile_unfollow(self):
+        follow_count = Follow.objects.count()
+        self.rin_client.get(self.PROFILE_UNFOLLOW_URL)
+        self.assertEqual(Follow.objects.count(), follow_count - 1)
+
+    def test_profile_follow_add_post(self):
+        post_data = {
+            'text': 'Пост Николая'
+        }
+        self.nikolay_client.post(self.CREATE_URL, data=post_data, follow=True)
+        response = self.rin_client.get(self.FOLLOW_INDEX_URL)
+        self.assertEqual(response.context['page_obj'][0].text,
+                         post_data['text'])
+
+    def test_profile_unfollow_add_post(self):
+        content_before = get_request(self.nikolay_client,
+                                     self.FOLLOW_INDEX_URL).content
+        post_data = {
+            'text': 'Пост Рин'
+        }
+        post_request( self.rin_client, self.CREATE_URL, post_data)
+        content_after = get_request(self.nikolay_client,
+                                     self.FOLLOW_INDEX_URL).content
+        self.assertEqual(content_before, content_after)
 
 
 class PostPaginatorTests(TestCase):
@@ -185,6 +199,10 @@ class PostPaginatorTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.INDEX_REVERSE = reverse('posts:index')
+        cls.GROUP_REVERSE = reverse('posts:group_posts',
+                                     kwargs={'slug': 'test-slug2'})
+        cls.PROFILE_REVERSE = reverse(
+            'posts:profile', kwargs={'username': 'Platon'})
         cls.user = User.objects.create_user(username='Platon')
         cls.group = Group.objects.create(
             title='Тестовая группа',
@@ -198,10 +216,6 @@ class PostPaginatorTests(TestCase):
         cls.posts = Post.objects.bulk_create(post_list)
 
     def setUp(self):
-        self.GROUP_REVERSE = reverse('posts:group_posts',
-                                     kwargs={'slug': self.group.slug})
-        self.PROFILE_REVERSE = reverse(
-            'posts:profile', kwargs={'username': self.user})
         self.platon_client = Client()
         self.platon_client.force_login(self.user)
 
@@ -231,6 +245,7 @@ class TestCache(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.INDEX_REVERSE = reverse('posts:index')
+        cls.CREATE_REVERSE = reverse('posts:post_create')
         cls.user = User.objects.create_user(username='Piton')
         cls.group = Group.objects.create(
             title='Тестовая группа',
@@ -248,9 +263,24 @@ class TestCache(TestCase):
         self.piton_client.force_login(self.user)
 
     def test_cache(self):
-        content_before = get_request(self.piton_client,
-                                     self.INDEX_REVERSE).content
-        self.post.delete()
+        post_data = {
+            'text': 'Тест кэша',
+            'group': self.group.pk
+        }
+        post_request(self.piton_client, self.CREATE_REVERSE, post_data)
+        response = get_request(self.piton_client, self.INDEX_REVERSE)
+        content_before = response.content
+        post = response.context['page_obj'][1]
+        self.assertEqual(post.text, self.post.text)
+        self.assertEqual(post.group.title, self.group.title)
+        self.assertEqual(post.group.slug, self.group.slug)
+        self.assertEqual(post.group.description, self.group.description)
+        self.assertEqual(post.author, self.post.author)
+        post.delete()
         content_after = get_request(self.piton_client,
                                     self.INDEX_REVERSE).content
         self.assertEqual(content_before, content_after)
+        cache.clear()
+        content_after = get_request(self.piton_client,
+                                    self.INDEX_REVERSE).content
+        self.assertNotEqual(content_before, content_after)
