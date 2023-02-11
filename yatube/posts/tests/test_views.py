@@ -32,13 +32,13 @@ class PostsViewsTest(TestCase):
         cls.INDEX_URL = '/'
         cls.CREATE_URL = '/create/'
         cls.FOLLOW_INDEX_URL = '/follow/'
-        cls.GROUP_URL = f'/group/test-slug/'
-        cls.PROFILE_URL = f'/profile/Rin/'
-        cls.DETAIL_POST_URL = f'/posts/1/'
-        cls.EDIT_URL = f'/posts/1/edit/'
-        cls.ADD_COMMENT_URL = f'/posts/1/comment/'
-        cls.PROFILE_FOLLOW_URL = f'/profile/Rin/follow/'
-        cls.PROFILE_UNFOLLOW_URL = f'/profile/Nikolay/unfollow/'
+        cls.GROUP_URL = '/group/test-slug/'
+        cls.PROFILE_URL = '/profile/Rin/'
+        cls.DETAIL_POST_URL = '/posts/1/'
+        cls.EDIT_URL = '/posts/1/edit/'
+        cls.ADD_COMMENT_URL = '/posts/1/comment/'
+        cls.PROFILE_FOLLOW_URL = '/profile/Rin/follow/'
+        cls.PROFILE_UNFOLLOW_URL = '/profile/Nikolay/unfollow/'
         cls.small_gif = (
             b'\x47\x49\x46\x38\x39\x61\x02\x00'
             b'\x01\x00\x80\x00\x00\x00\x00\x00'
@@ -188,9 +188,9 @@ class PostsViewsTest(TestCase):
         post_data = {
             'text': 'Пост Рин'
         }
-        post_request( self.rin_client, self.CREATE_URL, post_data)
+        post_request(self.rin_client, self.CREATE_URL, post_data)
         content_after = get_request(self.nikolay_client,
-                                     self.FOLLOW_INDEX_URL).content
+                                    self.FOLLOW_INDEX_URL).content
         self.assertEqual(content_before, content_after)
 
 
@@ -200,7 +200,7 @@ class PostPaginatorTests(TestCase):
         super().setUpClass()
         cls.INDEX_REVERSE = reverse('posts:index')
         cls.GROUP_REVERSE = reverse('posts:group_posts',
-                                     kwargs={'slug': 'test-slug2'})
+                                    kwargs={'slug': 'test-slug2'})
         cls.PROFILE_REVERSE = reverse(
             'posts:profile', kwargs={'username': 'Platon'})
         cls.user = User.objects.create_user(username='Platon')

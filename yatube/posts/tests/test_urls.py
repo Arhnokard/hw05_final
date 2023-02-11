@@ -20,10 +20,10 @@ class PostsURLTests(TestCase):
         cls.EDIT_URL = '/posts/1/edit/'
         cls.CREATE_URL = '/create/'
         cls.LOGIN_URL = '/auth/login/'
-        cls.ADD_COMMENT_URL = f'/posts/1/comment/'
+        cls.ADD_COMMENT_URL = '/posts/1/comment/'
         cls.FOLLOW_INDEX_URL = '/follow/'
-        cls.PROFILE_FOLLOW_URL = f'/profile/Rin/follow/'
-        cls.PROFILE_UNFOLLOW_URL = f'/profile/Rin/unfollow/'
+        cls.PROFILE_FOLLOW_URL = '/profile/Rin/follow/'
+        cls.PROFILE_UNFOLLOW_URL = '/profile/Rin/unfollow/'
         cls.UNEXISTING = '/unexisting/'
         cls.user = User.objects.create_user(username='Rin')
         cls.user2 = User.objects.create_user(username='Varian')
@@ -61,7 +61,7 @@ class PostsURLTests(TestCase):
     def test_post_edit_url_author_client(self):
         response = self.author_client.get(self.EDIT_URL)
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        
+
     def test_redirect_url_quest_client(self):
         url_list = (
             self.CREATE_URL, self.EDIT_URL, self.ADD_COMMENT_URL,
@@ -72,7 +72,7 @@ class PostsURLTests(TestCase):
             response = self.guest_client.get(url, follow=True)
             self.assertRedirects(
                 response, (f'{self.LOGIN_URL}?next={url}'))
-        
+
     def test_unexisting_url_guest_client(self):
         response = self.guest_client.get(self.UNEXISTING)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)

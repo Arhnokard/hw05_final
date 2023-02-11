@@ -19,7 +19,7 @@ class PostsFormTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.LOGIN_URL = '/auth/login/'
-        cls.ADD_COMMENT_URL = f'/posts/1/comment/'
+        cls.ADD_COMMENT_URL = '/posts/1/comment/'
         cls.user = User.objects.create(username='Rin')
         cls.group = Group.objects.create(
             title='Тестовая группа',
@@ -98,7 +98,7 @@ class PostsFormTests(TestCase):
         comment = {
             'text': 'комментарий'
         }
-        self.guest_client.post(self.ADD_COMMENT_URL,data=comment, follow=True)
+        self.guest_client.post(self.ADD_COMMENT_URL, data=comment, follow=True)
         self.assertFalse(Comment.objects.filter(
                          text=comment['text']).exists())
 
@@ -106,5 +106,5 @@ class PostsFormTests(TestCase):
         comment = {
             'text': 'комментарий'
         }
-        self.rin_client.post(self.ADD_COMMENT_URL,data=comment, follow=True)
+        self.rin_client.post(self.ADD_COMMENT_URL, data=comment, follow=True)
         self.assertTrue(Comment.objects.filter(text=comment['text']).exists())
