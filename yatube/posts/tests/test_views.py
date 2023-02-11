@@ -172,7 +172,7 @@ class PostsViewsTest(TestCase):
         self.rin_client.get(self.PROFILE_UNFOLLOW_URL)
         self.assertEqual(Follow.objects.count(), follow_count - 1)
         self.assertFalse(Follow.objects.filter
-                         (user=self.user,author=self.user2).exists())
+                         (user=self.user, author=self.user2).exists())
 
     def test_profile_follow_add_post(self):
         Follow.objects.create(user=self.user, author=self.user2)
