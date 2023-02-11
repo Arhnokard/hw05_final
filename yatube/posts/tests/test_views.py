@@ -70,10 +70,6 @@ class PostsViewsTest(TestCase):
             group=cls.group,
             image=cls.uploaded
         )
-        cls.follow = Follow.objects.create(
-            user=cls.user,
-            author=cls.user2
-        )
 
     @classmethod
     def tearDownClass(cls):
@@ -167,13 +163,19 @@ class PostsViewsTest(TestCase):
         follow_count = Follow.objects.count()
         self.nikolay_client.get(self.PROFILE_FOLLOW_URL)
         self.assertEqual(Follow.objects.count(), follow_count + 1)
+        self.assertEqual(Follow.objects.last().user, self.user2)
+        self.assertEqual(Follow.objects.last().author, self.user)
 
     def test_profile_unfollow(self):
+        Follow.objects.create(user=self.user, author=self.user2)
         follow_count = Follow.objects.count()
         self.rin_client.get(self.PROFILE_UNFOLLOW_URL)
         self.assertEqual(Follow.objects.count(), follow_count - 1)
+        self.assertFalse(Follow.objects.filter
+                         (user=self.user,author=self.user2).exists())
 
     def test_profile_follow_add_post(self):
+        Follow.objects.create(user=self.user, author=self.user2)
         post_data = {
             'text': 'Пост Николая'
         }
@@ -183,6 +185,7 @@ class PostsViewsTest(TestCase):
                          post_data['text'])
 
     def test_profile_unfollow_add_post(self):
+        Follow.objects.create(user=self.user, author=self.user2)
         content_before = get_request(self.nikolay_client,
                                      self.FOLLOW_INDEX_URL).content
         post_data = {
