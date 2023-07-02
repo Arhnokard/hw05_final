@@ -1,3 +1,6 @@
-# hw05_final
+# Социальная сеть блогеров
 
-[![CI](https://github.com/yandex-praktikum/hw05_final/actions/workflows/python-app.yml/badge.svg?branch=master)](https://github.com/yandex-praktikum/hw05_final/actions/workflows/python-app.yml)
+* Регистрация пользователей
+* Написание постов с возможностью  комментирования
+* Подписка на любимых авторов и вывод ленты только с их постами
+* Проект покрыт тестами
